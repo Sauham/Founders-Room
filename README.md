@@ -1,4 +1,4 @@
-# 🏢 Founders Room — AI Startup Team Simulator
+# Founders Room — AI Startup Team Simulator
 
 > Pitch a rough concept. Eight specialized AI agents argue about it live in
 > one room — Researcher, Engineer, Marketer, CFO, Ops, a red-teaming Skeptic,
