@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Founders Room — AI Startup Team Simulator</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header>
+    <h1>🏢 Founders Room</h1>
+    <span id="status" class="status">Pitch a rough concept and watch the team build the plan.</span>
+    <div class="header-actions">
+      <select id="replay-select" title="Replay a past session"><option value="">↻ Replay…</option></select>
+      <button id="export-btn" hidden>⬇ Export plan.md</button>
+    </div>
+  </header>
+
+  <div id="concept-bar">
+    <input id="concept-input" maxlength="600" autofocus
+           placeholder="Your rough concept — e.g. “an app that helps freelancers price their work”" />
+    <button id="start-btn">Pitch the room →</button>
+  </div>
+
+  <main id="layout" hidden>
+    <section id="chat-pane">
+      <div id="chat"></div>
+      <div id="interject-bar">
+        <input id="interject-input" maxlength="600"
+               placeholder="Interject any time — use @engineer, @cfo… to address someone" />
+        <button id="interject-btn">Send</button>
+      </div>
+    </section>
+    <aside id="plan-pane">
+      <h2>📋 Startup Plan <span class="live-dot" title="updates live"></span></h2>
+      <div id="plan-sections"></div>
+      <div id="open-questions-box" hidden>
+        <h3>❓ Open questions</h3>
+        <ul id="open-questions"></ul>
+      </div>
+    </aside>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
