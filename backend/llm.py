@@ -8,11 +8,15 @@ Model routing (PLAN.md §2/§10):
 from __future__ import annotations
 
 import asyncio
+import logging
 import os
 import re
 from dataclasses import dataclass
 
 from dotenv import load_dotenv
+from pydantic import ValidationError
+
+log = logging.getLogger(__name__)
 
 load_dotenv()
 
@@ -168,13 +172,26 @@ async def parse_structured(
         return mock_value
 
     client = get_client()
-    resp = await client.messages.parse(
-        model=model,
-        max_tokens=max_tokens,
-        system=system,
-        messages=[{"role": "user", "content": prompt}],
-        output_format=output_format,
-    )
+    try:
+        resp = await client.messages.parse(
+            model=model,
+            max_tokens=max_tokens,
+            system=system,
+            messages=[{"role": "user", "content": prompt}],
+            output_format=output_format,
+        )
+    except ValidationError as e:
+        # Most commonly: model hit max_tokens and JSON was truncated mid-string.
+        # Degrade gracefully so the session continues; callers already handle None.
+        log.warning(
+            "parse_structured(%s -> %s) returned invalid JSON (likely truncated "
+            "at max_tokens=%d): %s",
+            model,
+            output_format.__name__,
+            max_tokens,
+            e.errors()[0].get("msg", "validation error"),
+        )
+        return None
     if meter:
         meter.add(model, resp.usage)
         meter.check()
