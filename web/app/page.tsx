@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import ChatPane from "@/components/ChatPane";
 import PlanPane from "@/components/PlanPane";
@@ -49,6 +50,16 @@ export default function Home() {
             <button className="btn btn-ghost" onClick={session.exportPlan}>
               Export plan.md
             </button>
+          )}
+          {!session.live && (
+            <>
+              <Link className="btn btn-ghost" href="/login">
+                Sign in
+              </Link>
+              <Link className="btn btn-gold" href="/signup">
+                Sign up
+              </Link>
+            </>
           )}
         </div>
       </header>

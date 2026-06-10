@@ -151,8 +151,9 @@ The intended split is **frontend on Vercel, backend on Render**:
   and `CORS_ORIGINS=https://<your-app>.vercel.app`. The local `.env` file is
   gitignored and never ships.
 - **Frontend → Vercel.** Import the repo, set **Root Directory** to `web`, and
-  add `NEXT_PUBLIC_API_URL=https://<your-app>.onrender.com`. Next.js is
-  auto-detected; no extra build config needed.
+  add `NEXT_PUBLIC_API_URL=https://<your-app>.onrender.com` plus the two
+  `NEXT_PUBLIC_SUPABASE_*` vars (see [Authentication](#authentication-supabase)).
+  Next.js is auto-detected; no extra build config needed.
 - **Note:** Render's free tier sleeps on idle and may drop a long-running
   WebSocket mid-session; use a paid instance (or a keep-alive) for real demos.
 
@@ -293,6 +294,24 @@ The React frontend (`web/`) has its own `.env.local`:
 | Variable | Default | Meaning |
 |---|---|---|
 | `NEXT_PUBLIC_API_URL` | `http://127.0.0.1:8000` | Base URL of the FastAPI backend (no trailing slash). The WebSocket URL is derived from it. Set to your Render URL in production |
+| `NEXT_PUBLIC_SUPABASE_URL` | — | Supabase project URL (Project Settings → API). Required for login/signup |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | — | Supabase anon public key — browser-safe. **Never** put the `service_role` key here |
+
+### Authentication (Supabase)
+
+`web/` ships `/login` and `/signup` pages backed by **Supabase Auth** (hosted
+Postgres + password hashing, sessions, and JWTs handled for you). To enable it:
+
+1. Create a project at <https://supabase.com> (free tier is fine).
+2. Copy the **Project URL** and **anon public** key from Project Settings → API.
+3. Put both in `web/.env.local` (see the table above), then restart `npm run dev`.
+
+No SQL or table setup is needed — Supabase Auth manages its own `auth.users`
+table, so signup/login work immediately. By default a confirmation email is
+sent (the signup form shows a "check your email" notice); toggle **Auth →
+Email → Confirm email** off in the dashboard for instant login while testing.
+Sessions are stored client-side; the auth layer is isolated in
+`web/lib/auth.ts`, so swapping providers later means editing one file.
 
 ## API surface
 
@@ -353,10 +372,10 @@ founders-room/
 │       └── save_to_plan.py  # Editor: gap_check (Haiku) + compile_plan (Opus, validated)
 ├── frontend/                # vanilla HTML/CSS/JS — no build step, served by FastAPI (local)
 ├── web/                     # Next.js (React + TS) frontend — deploys to Vercel
-│   ├── app/                 # App Router: layout, page, global styles
-│   ├── components/          # ChatPane, PlanPane
+│   ├── app/                 # App Router: home, /login, /signup, global styles
+│   ├── components/          # ChatPane, PlanPane, AuthCard
 │   ├── hooks/useSession.ts  # WebSocket client + event handling + replay/export
-│   └── lib/api.ts           # API base URL, section list, shared types
+│   └── lib/                 # api.ts (backend URL/types), auth.ts + supabase.ts (auth)
 ├── scripts/
 │   ├── cost_check.py        # Phase 0 cost gate — projects $/session from real prompt sizes
 │   └── ws_smoke.py          # full end-to-end WebSocket session test

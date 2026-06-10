@@ -214,6 +214,30 @@ Vercel in prod) than the API. `CORSMiddleware` reads allowed origins from
 `CORS_ORIGINS` (default `localhost:3000`/`127.0.0.1:3000`); set it to the Vercel
 URL on Render. The vanilla `frontend/` is same-origin and unaffected.
 
+### Removed: Next.js dev tools indicator
+**Why:** the floating "N" dev overlay (dev-only, never in production) was noise.
+Set `devIndicators: false` in `web/next.config.mjs` to turn it off.
+
+### Added: login / signup pages with Supabase Auth
+**Why:** the app needs user accounts; Supabase was chosen over MongoDB because
+it provides hosted Postgres **and** a full auth system (password hashing,
+sessions, JWTs, email confirmation) out of the box — no auth code to hand-roll.
+- **`web/app/login` + `web/app/signup`** render a shared `AuthCard` (name/email/
+  password, client-side validation, error + "confirm your email" notices,
+  busy state). Header gains **Sign in / Sign up** links.
+- **`web/lib/supabase.ts`** lazily creates the browser client and returns `null`
+  when env vars are absent, so the form shows a friendly "auth not configured"
+  message instead of crashing.
+- **`web/lib/auth.ts`** is the single auth touchpoint (`signIn`/`signUp`/
+  `signOut`); the pages never reference Supabase directly, so swapping providers
+  later is a one-file change. Signup detects email-confirmation mode and tells
+  the user to check their inbox.
+- Config via `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+  (anon key is browser-safe; the `service_role` key must never ship to the
+  client). No SQL/table setup required — Supabase Auth owns `auth.users`.
+- *Scope note:* this is client-side auth only. The FastAPI backend does not yet
+  verify the Supabase JWT — wiring per-user session ownership is a later step.
+
 ---
 
 ## Verification (all run on this build)
