@@ -99,7 +99,7 @@ async def scribe_update(room) -> None:
         ),
         output_format=WhiteboardUpdate,
         model=llm.MODEL_LIGHT,
-        max_tokens=600,
+        max_tokens=2000,
         meter=room.meter,
         mock_value=WhiteboardUpdate(
             decisions=list(room.decisions),
