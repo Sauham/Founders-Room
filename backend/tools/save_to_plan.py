@@ -35,7 +35,7 @@ async def gap_check(room, completed: list[str], remaining: list[str]) -> GapChec
         ),
         output_format=GapCheck,
         model=llm.MODEL_LIGHT,
-        max_tokens=150,
+        max_tokens=500,
         meter=room.meter,
         mock_value=GapCheck(gap_round=None),
     )

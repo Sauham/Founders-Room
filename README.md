@@ -88,6 +88,30 @@ cp .env.example .env              # then put your ANTHROPIC_API_KEY in .env
 ```
 
 Open <http://127.0.0.1:8000>, type a concept, hit **Pitch the room →**.
+This serves the zero-build vanilla `frontend/` straight from FastAPI — the
+quickest way to run locally.
+
+### Run the React frontend (`web/`)
+
+There are **two frontends** (see [Two frontends](#two-frontends)). To run the
+Next.js client against the same backend, keep the backend running as above,
+then in a second terminal:
+
+```bash
+cd web
+cp .env.local.example .env.local   # NEXT_PUBLIC_API_URL defaults to 127.0.0.1:8000
+npm install
+npm run dev
+```
+
+Open <http://localhost:3000>. The React app talks to the FastAPI backend over
+the URL in `NEXT_PUBLIC_API_URL`, so CORS must allow `localhost:3000` (it does
+by default — see `CORS_ORIGINS`).
+
+> **Tip:** when running a live session, start the backend **without**
+> `--reload`. The auto-reloader restarts the server on any file save, which
+> drops the active WebSocket and kills the in-progress debate. Use `--reload`
+> only while editing backend code.
 
 ### Run the free mock-mode demo (no API key)
 
@@ -99,6 +123,38 @@ Mock mode streams canned-but-plausible debate through the **full real
 pipeline** (orchestrator, rounds, whiteboard, plan, replay) with zero API
 calls. Useful for trying the UI, running CI, or hacking on the orchestrator
 without burning credits.
+
+## Two frontends
+
+The repo ships **two** clients against the same FastAPI backend — pick based on
+what you're doing:
+
+| | `frontend/` | `web/` |
+|---|---|---|
+| Stack | vanilla HTML/CSS/JS | Next.js (React + TypeScript) |
+| Build step | none | `npm run build` |
+| How it runs | served by FastAPI at `:8000` | own dev/prod server at `:3000` |
+| Origin vs API | same-origin | cross-origin (needs `CORS_ORIGINS`) |
+| Best for | quick local runs, CI, zero toolchain | the deployable product (Vercel) |
+
+Both speak the identical WebSocket protocol, so they're interchangeable at
+runtime. `frontend/` is the fastest way to poke at the system locally; `web/`
+is what you deploy.
+
+## Deploying (Vercel + Render)
+
+The intended split is **frontend on Vercel, backend on Render**:
+
+- **Backend → Render.** Deploy the Python app with
+  `uvicorn backend.main:app --host 0.0.0.0 --port $PORT`. Set env vars in
+  Render's dashboard: `ANTHROPIC_API_KEY`, `SESSION_BUDGET_USD`, the turn caps,
+  and `CORS_ORIGINS=https://<your-app>.vercel.app`. The local `.env` file is
+  gitignored and never ships.
+- **Frontend → Vercel.** Import the repo, set **Root Directory** to `web`, and
+  add `NEXT_PUBLIC_API_URL=https://<your-app>.onrender.com`. Next.js is
+  auto-detected; no extra build config needed.
+- **Note:** Render's free tier sleeps on idle and may drop a long-running
+  WebSocket mid-session; use a paid instance (or a keep-alive) for real demos.
 
 ## How it works
 
@@ -230,6 +286,13 @@ are folded into Risks rather than silently dropped.
 | `SESSION_BUDGET_USD` | `2.00` | Hard per-session spend ceiling. Past this, the session compiles a plan from whatever was decided |
 | `MAX_TURNS_PER_ROUND` | `4` | Debate turns per round |
 | `GLOBAL_TURN_CAP` | `40` | Total debate turns per session |
+| `CORS_ORIGINS` | `http://localhost:3000,http://127.0.0.1:3000` | Comma-separated origins allowed to call the API. Set to your Vercel URL in production |
+
+The React frontend (`web/`) has its own `.env.local`:
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `NEXT_PUBLIC_API_URL` | `http://127.0.0.1:8000` | Base URL of the FastAPI backend (no trailing slash). The WebSocket URL is derived from it. Set to your Render URL in production |
 
 ## API surface
 
@@ -288,7 +351,12 @@ founders-room/
 │   └── tools/
 │       ├── web_search.py    # built-in web_search server tool spec (web_search_20260209)
 │       └── save_to_plan.py  # Editor: gap_check (Haiku) + compile_plan (Opus, validated)
-├── frontend/                # vanilla HTML/CSS/JS — no build step, served by FastAPI
+├── frontend/                # vanilla HTML/CSS/JS — no build step, served by FastAPI (local)
+├── web/                     # Next.js (React + TS) frontend — deploys to Vercel
+│   ├── app/                 # App Router: layout, page, global styles
+│   ├── components/          # ChatPane, PlanPane
+│   ├── hooks/useSession.ts  # WebSocket client + event handling + replay/export
+│   └── lib/api.ts           # API base URL, section list, shared types
 ├── scripts/
 │   ├── cost_check.py        # Phase 0 cost gate — projects $/session from real prompt sizes
 │   └── ws_smoke.py          # full end-to-end WebSocket session test

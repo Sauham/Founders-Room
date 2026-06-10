@@ -3,10 +3,12 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import re
 from pathlib import Path
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -20,6 +22,18 @@ MAX_INPUT_CHARS = 600
 _SID = re.compile(r"^[a-f0-9]{12}$")
 
 app = FastAPI(title="Founders Room")
+
+# The React frontend is served from a different origin (localhost:3000 in dev,
+# Vercel in prod). Set CORS_ORIGINS on Render, e.g.
+# CORS_ORIGINS=https://founders-room.vercel.app
+_cors = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[o.strip() for o in _cors.split(",") if o.strip()],
+    allow_methods=["GET"],
+    allow_headers=["*"],
+)
+
 app.mount("/static", StaticFiles(directory=FRONTEND / "src"), name="static")
 
 

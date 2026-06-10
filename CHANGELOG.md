@@ -161,6 +161,59 @@ FastAPI, one less failure mode for anyone cloning the repo.
 - Unexpected exceptions surface to the UI as an `error` event instead of a
   silent hang.
 
+## Phase 6 — Post-build hardening & React frontend (2026-06-10)
+
+Changes made after the first real-API sessions surfaced issues the mock
+pipeline couldn't.
+
+### Fixed: truncated structured-output JSON crashed live sessions
+**Found:** real sessions died with
+`ValidationError ... Invalid JSON: EOF while parsing a string` from both the
+Scribe (`WhiteboardUpdate`) and the Editor's gap check (`GapCheck`).
+**Cause:** the model hit `max_tokens` mid-JSON, so `messages.parse()` received
+a string that ended without its closing quote/brackets. The schemas were never
+the problem — the response was simply cut off.
+**Fix (two parts):**
+- Raised the caps that were too tight for a full whiteboard: `scribe_update`
+  600 → **2000**, `gap_check` 150 → **500**.
+- Made `parse_structured()` degrade gracefully: it now catches
+  `pydantic.ValidationError` around `messages.parse()`, logs a warning, and
+  returns `None`. All three callers (`scribe_update`, `gap_check`,
+  `compile_plan`) already treat `None` as a clean fallback, so a single
+  truncated call costs that one compression/gap-flag instead of crashing the
+  whole session. *Caveat:* a truncated call isn't billed to the `CostMeter`
+  (no `usage` object is returned when the SDK raises).
+
+### Changed: explicit `max_retries=4` on the Anthropic client
+**Why:** bursty multi-agent rounds fire many calls back-to-back and were
+tripping 429 rate limits. The async client now uses `max_retries=4` so
+transient 429/5xx are absorbed with exponential backoff instead of failing a
+turn. (Supersedes the earlier "rely on the SDK's 2× default" note.)
+
+### Added: `web/` — Next.js (React + TypeScript) frontend for Vercel
+**Why:** deployment target is Vercel for the frontend + Render for the backend,
+two separate origins. The original `frontend/` (vanilla HTML/JS served by
+FastAPI) can't deploy to Vercel as a framework app, so a parallel Next.js app
+was added. **`frontend/` is intentionally kept** — it still works as the
+zero-build local option served at `:8000`; `web/` is the deployable client.
+- App Router (`app/`), client-side `useSession` hook owning the WebSocket,
+  `ChatPane` + `PlanPane` components, ported 1:1 from the vanilla event handling
+  (same ~12 server event types, replay, `@mention` interject, plan.md export).
+- **Design:** black & gold product styling (Playfair Display + Inter, gold
+  reserved as an accent for decisions/rounds/CTAs) to read as a real product
+  rather than a generated template.
+- Backend base URL is read from `NEXT_PUBLIC_API_URL`; the WS URL is derived
+  from it (`http→ws`, `https→wss`), so the same build works locally and on Vercel.
+- Fonts are loaded via `<link>` to Google Fonts rather than `next/font` — the
+  build environment couldn't fetch fonts at build time (TLS), and `<link>`
+  resolves at runtime in the browser. Verified with a clean `next build`.
+
+### Added: CORS middleware on the FastAPI backend
+**Why:** the React client runs on a different origin (`localhost:3000` in dev,
+Vercel in prod) than the API. `CORSMiddleware` reads allowed origins from
+`CORS_ORIGINS` (default `localhost:3000`/`127.0.0.1:3000`); set it to the Vercel
+URL on Render. The vanilla `frontend/` is same-origin and unaffected.
+
 ---
 
 ## Verification (all run on this build)

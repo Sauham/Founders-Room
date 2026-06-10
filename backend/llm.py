@@ -41,7 +41,9 @@ def get_client():
     if _client is None:
         import anthropic
 
-        _client = anthropic.AsyncAnthropic()
+        # Retries with exponential backoff on 429/5xx — absorbs transient
+        # rate-limit hits during bursty multi-agent rounds.
+        _client = anthropic.AsyncAnthropic(max_retries=4)
     return _client
 
 
