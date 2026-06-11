@@ -79,14 +79,7 @@ export default function AuthCard({ mode }: { mode: "login" | "signup" }) {
         </label>
 
         <label className="field">
-          <span className="field-label-row">
-            Password
-            {!isSignup && (
-              <Link className="field-link" href="/forgot-password">
-                Forgot password?
-              </Link>
-            )}
-          </span>
+          <span>Password</span>
           <input
             type="password"
             autoComplete={isSignup ? "new-password" : "current-password"}
@@ -95,6 +88,13 @@ export default function AuthCard({ mode }: { mode: "login" | "signup" }) {
             onChange={set("password")}
           />
         </label>
+        {!isSignup && (
+          <div className="field-forgot">
+            <Link className="field-link" href="/forgot-password">
+              Forgot password?
+            </Link>
+          </div>
+        )}
 
         {error && <div className="auth-error">{error}</div>}
         {notice && <div className="auth-notice">{notice}</div>}

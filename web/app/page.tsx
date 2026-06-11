@@ -112,7 +112,7 @@ export default function Landing() {
       {/* ---------- about ---------- */}
       <section id="about" className="section">
         <div className="section-split">
-          <Reveal className="split-text">
+          <Reveal className="split-text" dir="left">
             <div className="kicker">About</div>
             <h2>Most AI tools hide the thinking. This one shows the whole argument.</h2>
             <p>
@@ -128,7 +128,7 @@ export default function Landing() {
               of it happen, and you can jump in whenever you want.
             </p>
           </Reveal>
-          <Reveal className="split-media" delay={120}>
+          <Reveal className="split-media" dir="right" delay={120}>
             <Image
               src="/boardroom.png"
               alt="An AI founding team debating around a table"
@@ -151,7 +151,7 @@ export default function Landing() {
         </Reveal>
         <div className="steps">
           {STEPS.map((s, i) => (
-            <Reveal key={s.n} delay={i * 90} className="step">
+            <Reveal key={s.n} delay={i * 80} dir={i % 2 === 0 ? "left" : "right"} className="step">
               <div className="step-n">{s.n}</div>
               <h3>{s.title}</h3>
               <p>{s.body}</p>
@@ -174,7 +174,7 @@ export default function Landing() {
         </Reveal>
         <div className="agent-grid">
           {AGENTS.map((a, i) => (
-            <Reveal key={a.name} delay={(i % 4) * 70} className="agent-card">
+            <Reveal key={a.name} delay={(i % 4) * 80} dir="scale" className="agent-card">
               <div className="agent-top">
                 <span className="agent-mono" style={{ borderColor: a.color, color: a.color }}>
                   {a.monogram}
@@ -203,7 +203,12 @@ export default function Landing() {
         </Reveal>
         <div className="price-grid">
           {PRICING.map((p, i) => (
-            <Reveal key={p.name} delay={i * 90} className={`price-card${p.featured ? " featured" : ""}`}>
+            <Reveal
+              key={p.name}
+              delay={i * 90}
+              dir={i === 0 ? "left" : i === 1 ? "up" : "right"}
+              className={`price-card${p.featured ? " featured" : ""}`}
+            >
               {p.featured && <div className="price-badge">Most popular</div>}
               <div className="price-name">{p.name}</div>
               <div className="price-amount">

@@ -44,10 +44,10 @@ export default function LandingNav() {
             Try now
           </Link>
         )}
-        <Link className="btn btn-ghost nav-signin" href="/login">
+        <Link className="btn btn-gold-soft nav-signin" href="/login">
           Sign in
         </Link>
-        <Link className="btn btn-ghost" href="/signup">
+        <Link className="btn btn-gold-soft" href="/signup">
           Sign up
         </Link>
         <button
