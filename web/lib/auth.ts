@@ -3,7 +3,7 @@ import { getSupabase } from "@/lib/supabase";
 /**
  * Auth client backed by Supabase Auth (hosted Postgres + password hashing,
  * sessions, and JWTs handled for us). The UI only calls signIn / signUp and
- * stays unaware of the backend — swap getSupabase() for another provider here
+ * stays unaware of the backend. Swap getSupabase() for another provider here
  * without touching the pages.
  */
 
@@ -52,6 +52,19 @@ export async function signUp(creds: Credentials): Promise<AuthResult> {
 
 export async function signOut(): Promise<void> {
   await getSupabase()?.auth.signOut();
+}
+
+export async function resetPassword(email: string): Promise<AuthResult> {
+  const sb = getSupabase();
+  if (!sb) return { ok: false, error: NOT_CONFIGURED };
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+    return { ok: false, error: "Enter a valid email address." };
+  }
+  const redirectTo =
+    typeof window !== "undefined" ? `${window.location.origin}/login` : undefined;
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo });
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
 }
 
 /** Minimal client-side validation shared by both forms. */

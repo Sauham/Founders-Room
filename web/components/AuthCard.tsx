@@ -79,7 +79,14 @@ export default function AuthCard({ mode }: { mode: "login" | "signup" }) {
         </label>
 
         <label className="field">
-          <span>Password</span>
+          <span className="field-label-row">
+            Password
+            {!isSignup && (
+              <Link className="field-link" href="/forgot-password">
+                Forgot password?
+              </Link>
+            )}
+          </span>
           <input
             type="password"
             autoComplete={isSignup ? "new-password" : "current-password"}

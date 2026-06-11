@@ -50,21 +50,29 @@ async def compile_plan(room) -> StartupPlan:
     plan = await llm.parse_structured(
         system=(
             _EDITOR["persona"]
-            + " Write each section as 2-5 sentences of tight, concrete prose in "
-            "markdown (inline bold ok, no headings). Use ONLY what the team "
-            "decided — do not invent numbers or facts they didn't state. Fold "
-            "unresolved open questions into the risks section. Leave the "
-            "sources list empty; it is tracked separately."
+            + " Write a thorough, investor-ready plan: each section should be "
+            "two to three full paragraphs (roughly 120-220 words) of concrete "
+            "prose in markdown — use inline bold for key terms and short bullet "
+            "lists where they sharpen the point, but no section headings. "
+            "Expand on the team's reasoning, spell out implications, and make "
+            "the logic explicit; the finished document should read as several "
+            "pages, not a summary. Use ONLY what the team decided — do not "
+            "invent numbers or facts they didn't state, but you may elaborate "
+            "on and explain the decisions in depth. Fold unresolved open "
+            "questions into the risks section. Leave the sources list empty; "
+            "it is tracked separately."
         ),
         prompt=(
             f"Startup concept: {room.concept}\n\n"
             f"Committed decisions:\n{decisions}\n\n"
             f"Open questions:\n" + "\n".join(room.open_questions)
-            + "\n\nCompile the full startup plan."
+            + "\n\nCompile the full startup plan in depth. Every section must be "
+            "substantive — multiple paragraphs — so the complete plan runs well "
+            "over a single page."
         ),
         output_format=StartupPlan,
         model=llm.MODEL_HEAVY,
-        max_tokens=2000,
+        max_tokens=6000,
         meter=room.meter,
         mock_value=_mock_plan(room),
     )

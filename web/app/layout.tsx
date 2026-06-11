@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Founders Room — Your AI founding team",
+  title: "Founders Room | Your AI founding team",
   description:
     "Pitch a rough concept. A full founding team debates it live and hands you a startup plan.",
 };

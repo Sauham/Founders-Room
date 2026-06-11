@@ -78,7 +78,7 @@ export default function ChatPane({
           if (item.kind === "round")
             return (
               <div className="round-header" key={item.id}>
-                <b>Round — {item.round}</b>
+                <b>Round · {item.round}</b>
                 <div>{item.question}</div>
               </div>
             );
@@ -102,7 +102,7 @@ export default function ChatPane({
           value={draft}
           maxLength={600}
           disabled={disabled}
-          placeholder="Interject any time — use @engineer, @cfo… to address someone"
+          placeholder="Interject any time. Use @engineer, @cfo… to address someone"
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && send()}
         />

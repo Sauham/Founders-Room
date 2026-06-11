@@ -47,7 +47,7 @@ export function useSession() {
           for (const a of (ev.agents as AgentMeta[]) ?? []) {
             agentsMeta.current[a.name] = a;
           }
-          return { ...s, status: `The room is live — “${ev.concept}”` };
+          return { ...s, status: `The room is live: “${ev.concept}”` };
         }
         case "round_start":
           return {
@@ -168,7 +168,7 @@ export function useSession() {
               {
                 kind: "system",
                 id: nextId++,
-                text: "The team is done — the full plan is in the panel.",
+                text: "The team is done. The full plan is in the panel.",
               },
             ],
           };
@@ -202,7 +202,7 @@ export function useSession() {
       sock.onerror = () =>
         setState((s) => ({
           ...s,
-          status: "Connection error — is the backend running?",
+          status: "Connection error. Is the backend running?",
         }));
     },
     [handle]

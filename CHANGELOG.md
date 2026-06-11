@@ -238,6 +238,45 @@ sessions, JWTs, email confirmation) out of the box — no auth code to hand-roll
 - *Scope note:* this is client-side auth only. The FastAPI backend does not yet
   verify the Supabase JWT — wiring per-user session ownership is a later step.
 
+## Phase 7 — Marketing landing page + auth polish (2026-06-11)
+
+### Changed: longer, investor-ready compiled plans
+**Why:** the final plan read as a one-page summary. `compile_plan` now asks for
+two to three full paragraphs per section and runs at `max_tokens=6000` (up from
+2000), so the exported document spans several pages while still using only what
+the team actually decided. Adds roughly $0.10-0.15 to a session, still well
+under the $2 ceiling.
+
+### Added: full marketing landing page at `/`
+**Why:** the app opened straight into the product; it needed a real front door
+for a deployable, product-feeling site.
+- The live product moved to **`/app`**; `/` is now a scrollable landing with a
+  sticky nav (Home, About, How it works, The team, Pricing, Contact), a hero,
+  an About split, a four-step "how it works", an 8-agent team grid (sourced from
+  `personas.py` so the descriptions stay accurate), a three-tier pricing block,
+  and a contact form (name / email / message).
+- **`Reveal`** component fades sections in on scroll via IntersectionObserver
+  (respects `prefers-reduced-motion`); smooth anchor scrolling throughout.
+- **GitHub + LinkedIn** logos glow gold on hover (`SocialLinks`).
+- Two generated black-and-gold images in `web/public/` back the hero and About.
+- Nav behavior: **Sign in / Sign up** are always present; the gold **Try now**
+  button appears only after the user scrolls past the hero (it's redundant with
+  the hero CTA at the top).
+
+### Added: forgot-password flow
+`/forgot-password` calls Supabase `resetPasswordForEmail` (redirects back to
+`/login`) and shows a neutral "if an account exists, a link is on its way"
+message so it never reveals whether an email is registered. A "Forgot password?"
+link sits on the login form. `signOut` + `resetPassword` added to `lib/auth.ts`.
+
+### Removed: replay dropdown + the Next.js dev indicator
+The header's "Replay a session…" selector was removed from the product view,
+and `devIndicators: false` hides the floating dev overlay.
+
+### Changed: removed em dashes from all user-facing copy
+Reworded every landing, product, and auth string that used an em dash so the
+copy reads naturally rather than machine-generated.
+
 ---
 
 ## Verification (all run on this build)

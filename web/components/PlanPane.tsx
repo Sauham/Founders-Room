@@ -19,7 +19,7 @@ function Section({ title, body }: { title: string; body: string }) {
     <div className={"plan-section" + (flash ? " updated" : "")}>
       <h3>{title}</h3>
       <div className={"sec-body" + (body ? "" : " empty")}>
-        {body || "— the room hasn't decided yet —"}
+        {body || "the room hasn't decided yet"}
       </div>
     </div>
   );

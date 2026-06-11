@@ -104,9 +104,12 @@ npm install
 npm run dev
 ```
 
-Open <http://localhost:3000>. The React app talks to the FastAPI backend over
-the URL in `NEXT_PUBLIC_API_URL`, so CORS must allow `localhost:3000` (it does
-by default — see `CORS_ORIGINS`).
+Open <http://localhost:3000>. The **marketing landing page** lives at `/`
+(hero, About, How it works, the team, pricing, contact) and the **live product**
+is at `/app`; the "Try now" buttons link there. Auth pages are at `/login`,
+`/signup`, and `/forgot-password`. The React app talks to the FastAPI backend
+over the URL in `NEXT_PUBLIC_API_URL`, so CORS must allow `localhost:3000` (it
+does by default, see `CORS_ORIGINS`).
 
 > **Tip:** when running a live session, start the backend **without**
 > `--reload`. The auto-reloader restarts the server on any file save, which
@@ -299,8 +302,9 @@ The React frontend (`web/`) has its own `.env.local`:
 
 ### Authentication (Supabase)
 
-`web/` ships `/login` and `/signup` pages backed by **Supabase Auth** (hosted
-Postgres + password hashing, sessions, and JWTs handled for you). To enable it:
+`web/` ships `/login`, `/signup`, and `/forgot-password` pages backed by
+**Supabase Auth** (hosted Postgres + password hashing, sessions, JWTs, and
+password-reset emails handled for you). To enable it:
 
 1. Create a project at <https://supabase.com> (free tier is fine).
 2. Copy the **Project URL** and **anon public** key from Project Settings → API.
@@ -371,11 +375,12 @@ founders-room/
 │       ├── web_search.py    # built-in web_search server tool spec (web_search_20260209)
 │       └── save_to_plan.py  # Editor: gap_check (Haiku) + compile_plan (Opus, validated)
 ├── frontend/                # vanilla HTML/CSS/JS — no build step, served by FastAPI (local)
-├── web/                     # Next.js (React + TS) frontend — deploys to Vercel
-│   ├── app/                 # App Router: home, /login, /signup, global styles
-│   ├── components/          # ChatPane, PlanPane, AuthCard
+├── web/                     # Next.js (React + TS) frontend, deploys to Vercel
+│   ├── app/                 # App Router: landing (/), /app, /login, /signup, /forgot-password
+│   ├── components/          # LandingNav, Reveal, SocialLinks, ContactForm, ChatPane, PlanPane, AuthCard
 │   ├── hooks/useSession.ts  # WebSocket client + event handling + replay/export
-│   └── lib/                 # api.ts (backend URL/types), auth.ts + supabase.ts (auth)
+│   ├── lib/                 # api.ts, agents.ts (team data), auth.ts + supabase.ts (auth)
+│   └── public/              # generated black & gold landing imagery
 ├── scripts/
 │   ├── cost_check.py        # Phase 0 cost gate — projects $/session from real prompt sizes
 │   └── ws_smoke.py          # full end-to-end WebSocket session test
