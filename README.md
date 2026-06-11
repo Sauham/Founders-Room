@@ -6,6 +6,7 @@
 > Editor compiles a validated startup plan that fills in on screen as they
 > argue. You can interject at any time.
 
+**Live demo: <https://founders-room-amber.vercel.app/>**
 
 ---
 
@@ -66,18 +67,27 @@ validated object. Every claim sourced from the web carries a citation.
 > _Drop a screenshot or GIF of the running app here (e.g. `docs/demo.gif`)
 > to make the README pop on GitHub._
 
+## Architecture
+
+Two pieces talk over a single WebSocket:
+
+- **Backend** — FastAPI (Python) running the orchestrator, agents, and the
+  Anthropic calls. Deployed on **Railway**.
+- **Frontend** — Next.js (React + TypeScript) in `web/`: the marketing landing
+  page, the live debate room, and Supabase-backed auth. Deployed on **Vercel**.
+
 ## Quick start
 
 ### Prerequisites
 
-- Python **3.11+** (3.12 recommended)
+- Python **3.11+** (3.12 recommended) and **Node 18+**
 - An Anthropic API key — get one at <https://platform.claude.com>
 
-### Run a real session
+### 1. Backend
 
 ```bash
-git clone https://github.com/<you>/founders-room.git
-cd founders-room
+git clone https://github.com/Sauham/Founders-Room.git
+cd Founders-Room
 
 python3.12 -m venv .venv
 .venv/bin/pip install -r requirements.txt
@@ -87,15 +97,14 @@ cp .env.example .env              # then put your ANTHROPIC_API_KEY in .env
 .venv/bin/uvicorn backend.main:app --port 8000
 ```
 
-Open <http://127.0.0.1:8000>, type a concept, hit **Pitch the room →**.
-This serves the zero-build vanilla `frontend/` straight from FastAPI — the
-quickest way to run locally.
+> **Tip:** when running a live session, start the backend **without**
+> `--reload`. The auto-reloader restarts the server on any file save, which
+> drops the active WebSocket and kills the in-progress debate. Use `--reload`
+> only while editing backend code.
 
-### Run the React frontend (`web/`)
+### 2. Frontend
 
-There are **two frontends** (see [Two frontends](#two-frontends)). To run the
-Next.js client against the same backend, keep the backend running as above,
-then in a second terminal:
+In a second terminal:
 
 ```bash
 cd web
@@ -104,17 +113,12 @@ npm install
 npm run dev
 ```
 
-Open <http://localhost:3000>. The **marketing landing page** lives at `/`
-(hero, About, How it works, the team, pricing, contact) and the **live product**
-is at `/app`; the "Try now" buttons link there. Auth pages are at `/login`,
-`/signup`, and `/forgot-password`. The React app talks to the FastAPI backend
-over the URL in `NEXT_PUBLIC_API_URL`, so CORS must allow `localhost:3000` (it
-does by default, see `CORS_ORIGINS`).
-
-> **Tip:** when running a live session, start the backend **without**
-> `--reload`. The auto-reloader restarts the server on any file save, which
-> drops the active WebSocket and kills the in-progress debate. Use `--reload`
-> only while editing backend code.
+Open <http://localhost:3000>. The **landing page** lives at `/` (hero, About,
+How it works, the team, pricing, contact), the **live product** is at `/app`
+(the "Try now" buttons link there), and auth lives at `/login`, `/signup`, and
+`/forgot-password`. The frontend talks to the backend over the URL in
+`NEXT_PUBLIC_API_URL`, so CORS must allow `localhost:3000` (it does by default,
+see `CORS_ORIGINS`).
 
 ### Run the free mock-mode demo (no API key)
 
@@ -123,42 +127,26 @@ MOCK_LLM=1 .venv/bin/uvicorn backend.main:app --port 8000
 ```
 
 Mock mode streams canned-but-plausible debate through the **full real
-pipeline** (orchestrator, rounds, whiteboard, plan, replay) with zero API
-calls. Useful for trying the UI, running CI, or hacking on the orchestrator
-without burning credits.
+pipeline** (orchestrator, rounds, whiteboard, plan) with zero API calls.
+Useful for hacking on the orchestrator or running CI without burning credits.
 
-## Two frontends
+## Deploying (Vercel + Railway)
 
-The repo ships **two** clients against the same FastAPI backend — pick based on
-what you're doing:
+The live deployment splits **frontend on Vercel, backend on Railway**:
 
-| | `frontend/` | `web/` |
-|---|---|---|
-| Stack | vanilla HTML/CSS/JS | Next.js (React + TypeScript) |
-| Build step | none | `npm run build` |
-| How it runs | served by FastAPI at `:8000` | own dev/prod server at `:3000` |
-| Origin vs API | same-origin | cross-origin (needs `CORS_ORIGINS`) |
-| Best for | quick local runs, CI, zero toolchain | the deployable product (Vercel) |
-
-Both speak the identical WebSocket protocol, so they're interchangeable at
-runtime. `frontend/` is the fastest way to poke at the system locally; `web/`
-is what you deploy.
-
-## Deploying (Vercel + Render)
-
-The intended split is **frontend on Vercel, backend on Render**:
-
-- **Backend → Render.** Deploy the Python app with
-  `uvicorn backend.main:app --host 0.0.0.0 --port $PORT`. Set env vars in
-  Render's dashboard: `ANTHROPIC_API_KEY`, `SESSION_BUDGET_USD`, the turn caps,
-  and `CORS_ORIGINS=https://<your-app>.vercel.app`. The local `.env` file is
-  gitignored and never ships.
+- **Backend → Railway.** Import the repo; `railway.toml` already provides the
+  start command (`uvicorn backend.main:app --host 0.0.0.0 --port $PORT`) and
+  `.python-version` pins Python 3.12. Set Variables: `ANTHROPIC_API_KEY`,
+  `MOCK_LLM=0`, `SESSION_BUDGET_USD`, the turn caps, and
+  `CORS_ORIGINS=https://<your-app>.vercel.app`. Generate a public domain under
+  Settings → Networking. The local `.env` is gitignored and never ships.
 - **Frontend → Vercel.** Import the repo, set **Root Directory** to `web`, and
-  add `NEXT_PUBLIC_API_URL=https://<your-app>.onrender.com` plus the two
+  add `NEXT_PUBLIC_API_URL=https://<your-app>.up.railway.app` plus the two
   `NEXT_PUBLIC_SUPABASE_*` vars (see [Authentication](#authentication-supabase)).
   Next.js is auto-detected; no extra build config needed.
-- **Note:** Render's free tier sleeps on idle and may drop a long-running
-  WebSocket mid-session; use a paid instance (or a keep-alive) for real demos.
+- **Wire them together:** `NEXT_PUBLIC_API_URL` (Vercel) points at the Railway
+  domain, and `CORS_ORIGINS` (Railway) lists the Vercel domain. The frontend
+  derives the secure WebSocket URL (`wss://`) automatically.
 
 ## How it works
 
@@ -296,7 +284,7 @@ The React frontend (`web/`) has its own `.env.local`:
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `NEXT_PUBLIC_API_URL` | `http://127.0.0.1:8000` | Base URL of the FastAPI backend (no trailing slash). The WebSocket URL is derived from it. Set to your Render URL in production |
+| `NEXT_PUBLIC_API_URL` | `http://127.0.0.1:8000` | Base URL of the FastAPI backend (no trailing slash). The WebSocket URL is derived from it. Set to your Railway URL in production |
 | `NEXT_PUBLIC_SUPABASE_URL` | — | Supabase project URL (Project Settings → API). Required for login/signup |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | — | Supabase anon public key — browser-safe. **Never** put the `service_role` key here |
 
@@ -323,7 +311,7 @@ Sessions are stored client-side; the auth layer is isolated in
 
 | Route | What |
 |---|---|
-| `GET /` | The single-page app |
+| `GET /` | Backend root (doubles as the Railway health check) |
 | `GET /api/sessions` | Past sessions (id, concept, created_at) |
 | `GET /api/sessions/{id}` | Full event log — powers replay |
 | `GET /api/sessions/{id}/plan.md` | The validated plan rendered as Markdown |
@@ -374,7 +362,6 @@ founders-room/
 │   └── tools/
 │       ├── web_search.py    # built-in web_search server tool spec (web_search_20260209)
 │       └── save_to_plan.py  # Editor: gap_check (Haiku) + compile_plan (Opus, validated)
-├── frontend/                # vanilla HTML/CSS/JS — no build step, served by FastAPI (local)
 ├── web/                     # Next.js (React + TS) frontend, deploys to Vercel
 │   ├── app/                 # App Router: landing (/), /app, /login, /signup, /forgot-password
 │   ├── components/          # LandingNav, Reveal, SocialLinks, ContactForm, ChatPane, PlanPane, AuthCard
@@ -387,6 +374,8 @@ founders-room/
 ├── sessions/                # saved transcripts (JSON) — powers reload + replay
 ├── PLAN.md                  # the original design doc; every "why" is here
 ├── CHANGELOG.md             # every change made while building, with rationale
+├── railway.toml             # Railway build + start command for the backend
+├── .python-version          # pins Python 3.12 for the Railway build
 ├── .env.example
 └── requirements.txt
 ```
@@ -457,7 +446,8 @@ ones:
 
 ## Known limitations (deliberate prototype scope)
 
-- One live session per WebSocket connection; no auth, no DB.
+- One live session per WebSocket connection. User accounts run on Supabase
+  Auth, but sessions are stored as JSON files on the backend, not yet per-user.
 - Mock mode's consensus probe always says "continue", so mock rounds run
   all 4 turns (richer demo); real sessions can end rounds early.
 - Replay re-renders events client-side at fixed pacing rather than at the
