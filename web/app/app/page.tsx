@@ -1,21 +1,47 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import ChatPane from "@/components/ChatPane";
 import PlanPane from "@/components/PlanPane";
+import UserMenu from "@/components/UserMenu";
 import { useSession } from "@/hooks/useSession";
+import { getCurrentUser } from "@/lib/auth";
 
 const ROSTER = ["Moderator", "Engineer", "Marketer", "CFO", "Ops", "Skeptic", "Researcher"];
 
 export default function AppPage() {
   const session = useSession();
+  const router = useRouter();
   const [concept, setConcept] = useState("");
+  const [authed, setAuthed] = useState<boolean | null>(null);
+
+  // You must be signed in even to try the room. Redirect guests to /login.
+  useEffect(() => {
+    let active = true;
+    getCurrentUser().then((user) => {
+      if (!active) return;
+      if (user) setAuthed(true);
+      else router.replace("/login?next=/app");
+    });
+    return () => {
+      active = false;
+    };
+  }, [router]);
 
   const pitch = () => {
     const c = concept.trim();
     if (c) session.start(c);
   };
+
+  if (!authed) {
+    return (
+      <div className="app">
+        <div className="auth-gate">Checking your session…</div>
+      </div>
+    );
+  }
 
   return (
     <div className="app">
@@ -31,16 +57,7 @@ export default function AppPage() {
               Export plan.md
             </button>
           )}
-          {!session.live && (
-            <>
-              <Link className="btn btn-ghost" href="/login">
-                Sign in
-              </Link>
-              <Link className="btn btn-gold" href="/signup">
-                Sign up
-              </Link>
-            </>
-          )}
+          <UserMenu />
         </div>
       </header>
 

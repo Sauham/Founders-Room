@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 
+from backend import billing
 from backend.orchestrator import SESSIONS_DIR, Room, run_session
 from backend.state import StartupPlan
 
@@ -88,6 +89,20 @@ async def get_plan_markdown(sid: str):
                              media_type="text/markdown")
 
 
+async def _run_and_bill(room: Room, send, user: dict) -> None:
+    """Run a session, then charge the user's lifetime spend with what it cost.
+
+    Runs in `finally` so spend is recorded even if the client disconnects mid
+    session and the task is cancelled.
+    """
+    try:
+        await run_session(room, send)
+    finally:
+        await asyncio.shield(
+            billing.add_usage(user["id"], user["email"], room.meter.spent_usd)
+        )
+
+
 @app.websocket("/ws")
 async def ws_endpoint(ws: WebSocket):
     await ws.accept()
@@ -108,8 +123,20 @@ async def ws_endpoint(ws: WebSocket):
                 if not concept:
                     await send({"type": "error", "message": "Tell the room your concept first."})
                     continue
+
+                # Auth gate + per-user lifetime budget (PLAN guardrails).
+                try:
+                    user, remaining = await billing.authorize_session(data.get("token"))
+                except billing.AuthError as e:
+                    await send({"type": "error", "message": str(e)})
+                    continue
+                except billing.BudgetReached as e:
+                    await send({"type": "error", "message": str(e)})
+                    continue
+
                 room = Room(concept=concept)
-                task = asyncio.create_task(run_session(room, send))
+                room.meter.budget_usd = remaining  # inf for the owner
+                task = asyncio.create_task(_run_and_bill(room, send, user))
             elif kind == "user_message" and room is not None:
                 text = str(data.get("text", "")).strip()[:MAX_INPUT_CHARS]
                 if text:

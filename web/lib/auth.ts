@@ -54,6 +54,22 @@ export async function signOut(): Promise<void> {
   await getSupabase()?.auth.signOut();
 }
 
+/** Current signed-in user (or null). Used to gate the app and show identity. */
+export async function getCurrentUser() {
+  const sb = getSupabase();
+  if (!sb) return null;
+  const { data } = await sb.auth.getSession();
+  return data.session?.user ?? null;
+}
+
+/** Supabase access token for the live session, sent to the backend over the WS. */
+export async function getAccessToken(): Promise<string | null> {
+  const sb = getSupabase();
+  if (!sb) return null;
+  const { data } = await sb.auth.getSession();
+  return data.session?.access_token ?? null;
+}
+
 export async function resetPassword(email: string): Promise<AuthResult> {
   const sb = getSupabase();
   if (!sb) return { ok: false, error: NOT_CONFIGURED };

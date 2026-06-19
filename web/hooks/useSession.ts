@@ -9,6 +9,7 @@ import {
   SessionSummary,
   wsUrl,
 } from "@/lib/api";
+import { getAccessToken } from "@/lib/auth";
 
 interface SessionState {
   items: ChatItem[];
@@ -189,11 +190,13 @@ export function useSession() {
   }, []);
 
   const start = useCallback(
-    (concept: string) => {
+    async (concept: string) => {
       setState({ ...INITIAL, live: true, status: "Convening the room…" });
+      const token = await getAccessToken();
       const sock = new WebSocket(wsUrl());
       ws.current = sock;
-      sock.onopen = () => sock.send(JSON.stringify({ type: "start", concept }));
+      sock.onopen = () =>
+        sock.send(JSON.stringify({ type: "start", concept, token }));
       sock.onmessage = (e) => handle(JSON.parse(e.data));
       sock.onclose = () =>
         setState((s) =>

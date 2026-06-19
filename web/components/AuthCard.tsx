@@ -36,7 +36,7 @@ export default function AuthCard({ mode }: { mode: "login" | "signup" }) {
       setNotice("Account created. Check your email to confirm, then sign in.");
       return;
     }
-    router.push("/");
+    router.push("/app");
   };
 
   return (

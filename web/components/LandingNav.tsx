@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import UserMenu from "@/components/UserMenu";
 
 const LINKS = [
   ["Home", "#top"],
@@ -44,12 +45,7 @@ export default function LandingNav() {
             Try now
           </Link>
         )}
-        <Link className="btn btn-gold-soft nav-signin" href="/login">
-          Sign in
-        </Link>
-        <Link className="btn btn-gold-soft" href="/signup">
-          Sign up
-        </Link>
+        <UserMenu />
         <button
           className="nav-burger"
           aria-label="Toggle menu"
