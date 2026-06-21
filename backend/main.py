@@ -136,6 +136,11 @@ async def ws_endpoint(ws: WebSocket):
 
                 room = Room(concept=concept)
                 room.meter.budget_usd = remaining  # inf for the owner
+                # With auth disabled (temporary), everyone resolves to the owner
+                # (unbounded). Keep the per-session ceiling so the open "Try now"
+                # path can't run up an unbounded bill.
+                if not billing.REQUIRE_AUTH and remaining == float("inf"):
+                    room.meter.budget_usd = float(os.getenv("SESSION_BUDGET_USD", "2.00"))
                 task = asyncio.create_task(_run_and_bill(room, send, user))
             elif kind == "user_message" and room is not None:
                 text = str(data.get("text", "")).strip()[:MAX_INPUT_CHARS]

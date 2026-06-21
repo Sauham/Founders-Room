@@ -1,47 +1,25 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import ChatPane from "@/components/ChatPane";
 import PlanPane from "@/components/PlanPane";
 import UserMenu from "@/components/UserMenu";
 import { useSession } from "@/hooks/useSession";
-import { getCurrentUser } from "@/lib/auth";
 
 const ROSTER = ["Moderator", "Engineer", "Marketer", "CFO", "Ops", "Skeptic", "Researcher"];
 
 export default function AppPage() {
   const session = useSession();
-  const router = useRouter();
   const [concept, setConcept] = useState("");
-  const [authed, setAuthed] = useState<boolean | null>(null);
 
-  // You must be signed in even to try the room. Redirect guests to /login.
-  useEffect(() => {
-    let active = true;
-    getCurrentUser().then((user) => {
-      if (!active) return;
-      if (user) setAuthed(true);
-      else router.replace("/login?next=/app");
-    });
-    return () => {
-      active = false;
-    };
-  }, [router]);
+  // TEMP: sign-in gate removed while the auth/email flow bug is being fixed.
+  // Restore the getCurrentUser() redirect to /login?next=/app once resolved.
 
   const pitch = () => {
     const c = concept.trim();
     if (c) session.start(c);
   };
-
-  if (!authed) {
-    return (
-      <div className="app">
-        <div className="auth-gate">Checking your session…</div>
-      </div>
-    );
-  }
 
   return (
     <div className="app">
